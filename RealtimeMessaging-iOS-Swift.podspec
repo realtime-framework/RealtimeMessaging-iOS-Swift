@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
       If your website or mobile app has data that needs to be updated in the user’s interface as it changes (e.g. real-time stock quotes or ever changing social news feed) Realtime Cloud Messaging is the reliable, easy, unbelievably fast, “works everywhere” solution.
   DESC
 
-  s.homepage         = "http://framework.realtime.co/messaging"
+  s.homepage         = "https://github.com/realtime-framework/RealtimeMessaging-iOS-Swift"
   s.license          = 'MIT'
   s.author           = { "Realtime.co" => "framework@realtime.co" }
   s.source           = { :git => "https://github.com/realtime-framework/RealtimeMessaging-iOS-Swift.git", :tag => s.version}
