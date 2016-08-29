@@ -26,10 +26,10 @@ public protocol OrtcClientDelegate{
     /// @name Instance Methods
     ///--------------------------------------------------------------------------------------
     /**
-    * Occurs when the client connects.
-    *
-    * - parameter ortc: The ORTC object.
-    */
+     * Occurs when the client connects.
+     *
+     * - parameter ortc: The ORTC object.
+     */
     func onConnected(ortc: OrtcClient)
     /**
      * Occurs when the client disconnects.
@@ -89,53 +89,53 @@ public protocol OrtcClientDelegate{
  import RealtimeMessaging_iOS_Swift
  
  class OrtcClass: NSObject, OrtcClientDelegate{
-     let APPKEY = "<INSERT_YOUR_APP_KEY>"
-     let TOKEN = "guest"
-     let METADATA = "swift example"
-     let URL = "https://ortc-developers.realtime.co/server/ssl/2.1/"
-     var ortc: OrtcClient?
-     
-     func connect()
-     {
-         self.ortc = OrtcClient.ortcClientWithConfig(self)
-         self.ortc!.connectionMetadata = METADATA
-         self.ortc!.clusterUrl = URL
-         self.ortc!.connect(APPKEY, authenticationToken: TOKEN)
-     }
+ let APPKEY = "<INSERT_YOUR_APP_KEY>"
+ let TOKEN = "guest"
+ let METADATA = "swift example"
+ let URL = "https://ortc-developers.realtime.co/server/ssl/2.1/"
+ var ortc: OrtcClient?
  
-     func onConnected(ortc: OrtcClient){
-        NSLog("CONNECTED")
-        ortc.subscribe("SOME_CHANNEL", subscribeOnReconnected: true, onMessage: { (ortcClient:OrtcClient!, channel:String!, message:String!) -> Void in
-            NSLog("Receive message: %@ on channel: %@", message!, channel!)
-        })
-     }
-
-     func onDisconnected(ortc: OrtcClient){
-        // Disconnected
-     }
-
-     func onSubscribed(ortc: OrtcClient, channel: String){
-        // Subscribed to the channel
+ func connect()
+ {
+ self.ortc = OrtcClient.ortcClientWithConfig(self)
+ self.ortc!.connectionMetadata = METADATA
+ self.ortc!.clusterUrl = URL
+ self.ortc!.connect(APPKEY, authenticationToken: TOKEN)
+ }
  
-        // Send a message
-        ortc.send(channel, "Hello world!!!")
-     }
-
-     func onUnsubscribed(ortc: OrtcClient, channel: String){
-        // Unsubscribed from the channel 'channel'
-     }
-
-     func onException(ortc: OrtcClient, error: NSError){
-        // Exception occurred
-     }
-     
-     func onReconnecting(ortc: OrtcClient){
-        // Reconnecting
-     }
-
-     func onReconnected(ortc: OrtcClient){
-        // Reconnected
-     }
+ func onConnected(ortc: OrtcClient){
+ NSLog("CONNECTED")
+ ortc.subscribe("SOME_CHANNEL", subscribeOnReconnected: true, onMessage: { (ortcClient:OrtcClient!, channel:String!, message:String!) -> Void in
+ NSLog("Receive message: %@ on channel: %@", message!, channel!)
+ })
+ }
+ 
+ func onDisconnected(ortc: OrtcClient){
+ // Disconnected
+ }
+ 
+ func onSubscribed(ortc: OrtcClient, channel: String){
+ // Subscribed to the channel
+ 
+ // Send a message
+ ortc.send(channel, "Hello world!!!")
+ }
+ 
+ func onUnsubscribed(ortc: OrtcClient, channel: String){
+ // Unsubscribed from the channel 'channel'
+ }
+ 
+ func onException(ortc: OrtcClient, error: NSError){
+ // Exception occurred
+ }
+ 
+ func onReconnecting(ortc: OrtcClient){
+ // Reconnecting
+ }
+ 
+ func onReconnected(ortc: OrtcClient){
+ // Reconnected
+ }
  }
  */
 public class OrtcClient: NSObject, WebSocketDelegate {
@@ -163,6 +163,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
     let CHANNEL_PATTERN: String = "^\\\\\"ch\\\\\":\\\\\"(.*?)\\\\\"$"
     let EXCEPTION_PATTERN: String = "^\\\\\"ex\\\\\":\\{(\\\\\"op\\\\\":\\\\\"(.*?[^\"]+)\\\\\",)?(\\\\\"ch\\\\\":\\\\\"(.*?)\\\\\",)?\\\\\"ex\\\\\":\\\\\"(.*?)\\\\\"\\}$"
     let RECEIVED_PATTERN: String = "^a\\[\"\\{\\\\\"ch\\\\\":\\\\\"(.*?)\\\\\",\\\\\"m\\\\\":\\\\\"([\\s\\S]*?)\\\\\"\\}\"\\]$"
+    let RECEIVED_PATTERN_FILTERED: String = "^a\\[\"\\{\\\\\"ch\\\\\":\\\\\"(.*?)\\\\\",\\\\\"f\\\\\":(.*),\\\\\"m\\\\\":\\\\\"([\\s\\S]*?)\\\\\"\\}\"\\]$"
     let MULTI_PART_MESSAGE_PATTERN: String = "^(.[^_]*?)_(.[^-]*?)-(.[^_]*?)_([\\s\\S]*?)$"
     let CLUSTER_RESPONSE_PATTERN: String = "^var SOCKET_SERVER = \\\"(.*?)\\\";$"
     let DEVICE_TOKEN_PATTERN: String = "[0-9A-Fa-f]{64}"
@@ -217,12 +218,12 @@ public class OrtcClient: NSObject, WebSocketDelegate {
     //MARK: Public methods
     
     /**
-    * Initializes a new instance of the ORTC class.
-    *
-    * - parameter delegate: The object holding the ORTC callbacks, usually 'self'.
-    *
-    * - returns: New instance of the OrtcClient class.
-    */
+     * Initializes a new instance of the ORTC class.
+     *
+     * - parameter delegate: The object holding the ORTC callbacks, usually 'self'.
+     *
+     * - returns: New instance of the OrtcClient class.
+     */
     public static func ortcClientWithConfig(delegate: OrtcClientDelegate) -> OrtcClient{
         return OrtcClient(config: delegate)
     }
@@ -321,8 +322,8 @@ public class OrtcClient: NSObject, WebSocketDelegate {
         // Clear subscribed channels
         self.subscribedChannels?.removeAllObjects()
         /*
-        * Sanity Checks.
-        */
+         * Sanity Checks.
+         */
         if isConnected == false {
             self.delegateExceptionCallback(self, error: self.generateError("Not connected"))
         } else {
@@ -415,7 +416,19 @@ public class OrtcClient: NSObject, WebSocketDelegate {
      * - parameter onMessage: The callback called when a message arrives at the channel.
      */
     public func subscribe(channel:String, subscribeOnReconnected:Bool, onMessage:(ortc:OrtcClient, channel:String, message:String)->Void){
-        self.subscribeChannel(channel, withNotifications: WITHOUT_NOTIFICATIONS, subscribeOnReconnect: subscribeOnReconnected, onMessage: onMessage)
+        self.subscribeChannel(channel, withNotifications: WITHOUT_NOTIFICATIONS, subscribeOnReconnect: subscribeOnReconnected, withFilter: false, filter: "", onMessage: onMessage, onMessageWithFilter: nil)
+    }
+    
+    
+    /**
+     * Subscribes to a channel to receive messages sent to it.
+     *
+     * - parameter channel: The channel name.
+     * - parameter subscribeOnReconnected: Indicates whether the client should subscribe to the channel when reconnected (if it was previously subscribed when connected).
+     * - parameter onMessage: The callback called when a message arrives at the channel.
+     */
+    public func subscribeWithFilter(channel:String, subscribeOnReconnected:Bool, filter:String ,onMessageWithFilter:(ortc:OrtcClient, channel:String, filtered:Bool, message:String)->Void){
+        self.subscribeChannel(channel, withNotifications: WITHOUT_NOTIFICATIONS, subscribeOnReconnect: subscribeOnReconnected, withFilter: true, filter: filter, onMessage: nil, onMessageWithFilter: onMessageWithFilter)
     }
     
     /**
@@ -426,7 +439,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
      * - parameter onMessage: The callback called when a message or a Push Notification arrives at the channel.
      */
     public func subscribeWithNotifications(channel:String, subscribeOnReconnected:Bool, onMessage:(ortc:OrtcClient, channel:String, message:String)->Void){
-        self.subscribeChannel(channel, withNotifications: WITH_NOTIFICATIONS, subscribeOnReconnect: subscribeOnReconnected, onMessage: onMessage)
+        self.subscribeChannel(channel, withNotifications: WITH_NOTIFICATIONS, subscribeOnReconnect: subscribeOnReconnected, withFilter: false, filter: "", onMessage: onMessage, onMessageWithFilter: nil)
     }
     
     /**
@@ -529,8 +542,8 @@ public class OrtcClient: NSObject, WebSocketDelegate {
     public func isSubscribed(channel:String) -> NSNumber?{
         var result: NSNumber?
         /*
-        * Sanity Checks.
-        */
+         * Sanity Checks.
+         */
         if isConnected == false {
             self.delegateExceptionCallback(self, error: self.generateError("Not connected"))
         } else if self.isEmpty(channel) {
@@ -562,69 +575,69 @@ public class OrtcClient: NSObject, WebSocketDelegate {
      - return: TRUE if the authentication was successful or FALSE if it was not.
      */
     public func saveAuthentication(aUrl:String,
-        isCluster:Bool,
-        authenticationToken:String,
-        authenticationTokenIsPrivate:Bool,
-        applicationKey:String,
-        timeToLive:Int,
-        privateKey:String,
-        permissions:NSMutableDictionary?)->Bool{
-            /*
-            * Sanity Checks.
-            */
-            if self.isEmpty(aUrl) {
-                NSException(name: "Url", reason: "URL is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(authenticationToken) {
-                NSException(name: "Authentication Token", reason: "Authentication Token is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(applicationKey) {
-                NSException(name: "Application Key", reason: "Application Key is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(privateKey) {
-                NSException(name: "Private Key", reason: "Private Key is null or empty", userInfo: nil).raise()
-            } else {
-                var ret: Bool = false
-                var connectionUrl: String? = aUrl
-                if isCluster {
-                    connectionUrl = String(self.getClusterServer(true, aPostUrl: aUrl)!)
-                }
-                if connectionUrl != nil {
-                    connectionUrl = connectionUrl!.hasSuffix("/") ? connectionUrl! : connectionUrl! + "/"
-                    var post: String = "AT=\(authenticationToken)&PVT=\(authenticationTokenIsPrivate ? "1" : "0")&AK=\(applicationKey)&TTL=\(timeToLive)&PK=\(privateKey)"
-                    if permissions != nil && permissions!.count > 0 {
-                        post = post + "&TP=\(CUnsignedLong(permissions!.count))"
-                        let keys: [AnyObject]? = permissions!.allKeys
-                        // the dictionary keys
-                        for key in keys! {
-                            post = post + "&\(key)=\(permissions![key as! String] as! String)"
-                        }
-                    }
-                    let postData: NSData? = post.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: true)
-                    let postLength: String? = "\(CUnsignedLong((postData! as NSData).length))"
-                    let request: NSMutableURLRequest = NSMutableURLRequest()
-                    request.URL = NSURL(string: connectionUrl! + "authenticate")
-                    request.HTTPMethod = "POST"
-                    request.setValue(postLength, forHTTPHeaderField: "Content-Length")
-                    request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-                    request.HTTPBody = postData
-                    // Send request and get response
-                    
-                    
-                    let semaphore = dispatch_semaphore_create(0)
-                    
-                    NSURLSession.sharedSession().dataTaskWithRequest(request, completionHandler: { (data:NSData?, urlResponse:NSURLResponse?, error:NSError?) -> Void in
-                        if urlResponse != nil {
-                            ret = Bool((urlResponse as! NSHTTPURLResponse).statusCode == 201)
-                        }else if error != nil{
-                            ret = false
-                        }
-                        dispatch_semaphore_signal(semaphore)
-                    }).resume()
-                    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-                } else {
-                    NSException(name: "Get Cluster URL", reason: "Unable to get URL from cluster", userInfo: nil).raise()
-                }
-                return ret
+                                   isCluster:Bool,
+                                   authenticationToken:String,
+                                   authenticationTokenIsPrivate:Bool,
+                                   applicationKey:String,
+                                   timeToLive:Int,
+                                   privateKey:String,
+                                   permissions:NSMutableDictionary?)->Bool{
+        /*
+         * Sanity Checks.
+         */
+        if self.isEmpty(aUrl) {
+            NSException(name: "Url", reason: "URL is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(authenticationToken) {
+            NSException(name: "Authentication Token", reason: "Authentication Token is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(applicationKey) {
+            NSException(name: "Application Key", reason: "Application Key is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(privateKey) {
+            NSException(name: "Private Key", reason: "Private Key is null or empty", userInfo: nil).raise()
+        } else {
+            var ret: Bool = false
+            var connectionUrl: String? = aUrl
+            if isCluster {
+                connectionUrl = String(self.getClusterServer(true, aPostUrl: aUrl)!)
             }
-            return false
+            if connectionUrl != nil {
+                connectionUrl = connectionUrl!.hasSuffix("/") ? connectionUrl! : connectionUrl! + "/"
+                var post: String = "AT=\(authenticationToken)&PVT=\(authenticationTokenIsPrivate ? "1" : "0")&AK=\(applicationKey)&TTL=\(timeToLive)&PK=\(privateKey)"
+                if permissions != nil && permissions!.count > 0 {
+                    post = post + "&TP=\(CUnsignedLong(permissions!.count))"
+                    let keys: [AnyObject]? = permissions!.allKeys
+                    // the dictionary keys
+                    for key in keys! {
+                        post = post + "&\(key)=\(permissions![key as! String] as! String)"
+                    }
+                }
+                let postData: NSData? = post.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: true)
+                let postLength: String? = "\(CUnsignedLong((postData! as NSData).length))"
+                let request: NSMutableURLRequest = NSMutableURLRequest()
+                request.URL = NSURL(string: connectionUrl! + "authenticate")
+                request.HTTPMethod = "POST"
+                request.setValue(postLength, forHTTPHeaderField: "Content-Length")
+                request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+                request.HTTPBody = postData
+                // Send request and get response
+                
+                
+                let semaphore = dispatch_semaphore_create(0)
+                
+                NSURLSession.sharedSession().dataTaskWithRequest(request, completionHandler: { (data:NSData?, urlResponse:NSURLResponse?, error:NSError?) -> Void in
+                    if urlResponse != nil {
+                        ret = Bool((urlResponse as! NSHTTPURLResponse).statusCode == 201)
+                    }else if error != nil{
+                        ret = false
+                    }
+                    dispatch_semaphore_signal(semaphore)
+                }).resume()
+                dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+            } else {
+                NSException(name: "Get Cluster URL", reason: "Unable to get URL from cluster", userInfo: nil).raise()
+            }
+            return ret
+        }
+        return false
     }
     
     /** Enables presence for the specified channel with first 100 unique metadata if true.
@@ -639,12 +652,12 @@ public class OrtcClient: NSObject, WebSocketDelegate {
      - parameter callback: Callback with error (NSError) and result (NSString) parameters
      */
     public func enablePresence(aUrl:String, isCluster:Bool,
-        applicationKey:String,
-        privateKey:String,
-        channel:String,
-        metadata:Bool,
-        callback:(error:NSError?, result:NSString?)->Void){
-            self.setPresence(true, aUrl: aUrl, isCluster: isCluster, applicationKey: applicationKey, privateKey: privateKey, channel: channel, metadata: metadata, callback: callback)
+                               applicationKey:String,
+                               privateKey:String,
+                               channel:String,
+                               metadata:Bool,
+                               callback:(error:NSError?, result:NSString?)->Void){
+        self.setPresence(true, aUrl: aUrl, isCluster: isCluster, applicationKey: applicationKey, privateKey: privateKey, channel: channel, metadata: metadata, callback: callback)
     }
     
     /** Disables presence for the specified channel.
@@ -658,65 +671,65 @@ public class OrtcClient: NSObject, WebSocketDelegate {
      - parameter callback: Callback with error (NSError) and result (NSString) parameters
      */
     public func disablePresence(aUrl:String,
-        isCluster:Bool,
-        applicationKey:String,
-        privateKey:String,
-        channel:String,
-        callback:(error:NSError?, result:NSString?)->Void){
-            self.setPresence(false, aUrl: aUrl, isCluster: isCluster, applicationKey: applicationKey, privateKey: privateKey, channel: channel, metadata: false, callback: callback)
+                                isCluster:Bool,
+                                applicationKey:String,
+                                privateKey:String,
+                                channel:String,
+                                callback:(error:NSError?, result:NSString?)->Void){
+        self.setPresence(false, aUrl: aUrl, isCluster: isCluster, applicationKey: applicationKey, privateKey: privateKey, channel: channel, metadata: false, callback: callback)
     }
     
     func setPresence(enable:Bool, aUrl:String, isCluster:Bool,
-        applicationKey:String,
-        privateKey:String,
-        channel:String,
-        metadata:Bool,
-        callback:(error:NSError?, result:NSString?)->Void){
-            if self.isEmpty(aUrl) {
-                NSException(name: "Url", reason: "URL is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(applicationKey) {
-                NSException(name: "Application Key", reason: "Application Key is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(privateKey) {
-                NSException(name: "Private Key", reason: "Private Key is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(channel) {
-                NSException(name: "Channel", reason: "Channel is null or empty", userInfo: nil).raise()
-            } else if !self.ortcIsValidInput(channel) {
-                NSException(name: "Channel", reason: "Channel has invalid characters", userInfo: nil).raise()
-            } else {
-                var connectionUrl: String? = aUrl
-                if isCluster {
-                    connectionUrl = String(self.getClusterServer(true, aPostUrl: aUrl))
-                }
-                if connectionUrl != nil {
-                    connectionUrl = connectionUrl!.hasSuffix("/") ? connectionUrl! : connectionUrl! + "/"
-                    var path: String = ""
-                    var content: String = ""
-                    
-                    if enable {
-                        path = "presence/enable/\(applicationKey)/\(channel)"
-                        content = "privatekey=\(privateKey)&metadata=\((metadata ? "1" : "0"))"
-                    }else{
-                        path = "presence/disable/\(applicationKey)/\(channel)"
-                        content = "privatekey=\(privateKey)"
-                    }
-                    
-                    connectionUrl = connectionUrl! + path
-                    let postData: NSData = (content as NSString).dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: true)!
-                    let postLength: String = "\(CUnsignedLong((postData as NSData).length))"
-                    let request: NSMutableURLRequest = NSMutableURLRequest()
-                    request.URL = NSURL(string: connectionUrl!)
-                    request.HTTPMethod = "POST"
-                    request.setValue(postLength, forHTTPHeaderField: "Content-Length")
-                    request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-                    request.HTTPBody = postData
-                    let pr:PresenceRequest = PresenceRequest()
-                    pr.callback = callback
-                    pr.post(request)
-                } else {
-                    let error: NSError = self.generateError("Unable to get URL from cluster")
-                    callback(error: error, result: nil)
-                }
+                     applicationKey:String,
+                     privateKey:String,
+                     channel:String,
+                     metadata:Bool,
+                     callback:(error:NSError?, result:NSString?)->Void){
+        if self.isEmpty(aUrl) {
+            NSException(name: "Url", reason: "URL is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(applicationKey) {
+            NSException(name: "Application Key", reason: "Application Key is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(privateKey) {
+            NSException(name: "Private Key", reason: "Private Key is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(channel) {
+            NSException(name: "Channel", reason: "Channel is null or empty", userInfo: nil).raise()
+        } else if !self.ortcIsValidInput(channel) {
+            NSException(name: "Channel", reason: "Channel has invalid characters", userInfo: nil).raise()
+        } else {
+            var connectionUrl: String? = aUrl
+            if isCluster {
+                connectionUrl = String(self.getClusterServer(true, aPostUrl: aUrl))
             }
+            if connectionUrl != nil {
+                connectionUrl = connectionUrl!.hasSuffix("/") ? connectionUrl! : connectionUrl! + "/"
+                var path: String = ""
+                var content: String = ""
+                
+                if enable {
+                    path = "presence/enable/\(applicationKey)/\(channel)"
+                    content = "privatekey=\(privateKey)&metadata=\((metadata ? "1" : "0"))"
+                }else{
+                    path = "presence/disable/\(applicationKey)/\(channel)"
+                    content = "privatekey=\(privateKey)"
+                }
+                
+                connectionUrl = connectionUrl! + path
+                let postData: NSData = (content as NSString).dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: true)!
+                let postLength: String = "\(CUnsignedLong((postData as NSData).length))"
+                let request: NSMutableURLRequest = NSMutableURLRequest()
+                request.URL = NSURL(string: connectionUrl!)
+                request.HTTPMethod = "POST"
+                request.setValue(postLength, forHTTPHeaderField: "Content-Length")
+                request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+                request.HTTPBody = postData
+                let pr:PresenceRequest = PresenceRequest()
+                pr.callback = callback
+                pr.post(request)
+            } else {
+                let error: NSError = self.generateError("Unable to get URL from cluster")
+                callback(error: error, result: nil)
+            }
+        }
     }
     
     
@@ -731,45 +744,45 @@ public class OrtcClient: NSObject, WebSocketDelegate {
      * - parameter callback: Callback with error (NSError) and result (NSDictionary) parameters
      */
     public func presence(aUrl:String,
-        isCluster:Bool,
-        applicationKey:String,
-        authenticationToken:String,
-        channel:String,
-        callback:(error:NSError?, result:NSDictionary?)->Void){
-            /*
-            * Sanity Checks.
-            */
-            if self.isEmpty(aUrl) {
-                NSException(name: "Url", reason: "URL is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(applicationKey) {
-                NSException(name: "Application Key", reason: "Application Key is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(authenticationToken) {
-                NSException(name: "Authentication Token", reason: "Authentication Token is null or empty", userInfo: nil).raise()
-            } else if self.isEmpty(channel) {
-                NSException(name: "Channel", reason: "Channel is null or empty", userInfo: nil).raise()
-            } else if !self.ortcIsValidInput(channel) {
-                NSException(name: "Channel", reason: "Channel has invalid characters", userInfo: nil).raise()
-            } else {
-                var connectionUrl: String? = aUrl
-                if isCluster {
-                    connectionUrl = String(self.getClusterServer(true, aPostUrl: aUrl))
-                }
-                if connectionUrl != nil {
-                    connectionUrl = connectionUrl!.hasSuffix("/") ? connectionUrl! : connectionUrl! + "/"
-                    let path: String = "presence/\(applicationKey)/\(authenticationToken)/\(channel)"
-                    connectionUrl = connectionUrl! + path
-                    let request: NSMutableURLRequest = NSMutableURLRequest()
-                    request.URL = NSURL(string: connectionUrl!)
-                    request.HTTPMethod = "GET"
-                    request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-                    let pr:PresenceRequest = PresenceRequest()
-                    pr.callbackDictionary = callback
-                    pr.get(request)
-                } else {
-                    let error: NSError = self.generateError("Unable to get URL from cluster")
-                    callback(error: error, result: nil)
-                }
+                         isCluster:Bool,
+                         applicationKey:String,
+                         authenticationToken:String,
+                         channel:String,
+                         callback:(error:NSError?, result:NSDictionary?)->Void){
+        /*
+         * Sanity Checks.
+         */
+        if self.isEmpty(aUrl) {
+            NSException(name: "Url", reason: "URL is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(applicationKey) {
+            NSException(name: "Application Key", reason: "Application Key is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(authenticationToken) {
+            NSException(name: "Authentication Token", reason: "Authentication Token is null or empty", userInfo: nil).raise()
+        } else if self.isEmpty(channel) {
+            NSException(name: "Channel", reason: "Channel is null or empty", userInfo: nil).raise()
+        } else if !self.ortcIsValidInput(channel) {
+            NSException(name: "Channel", reason: "Channel has invalid characters", userInfo: nil).raise()
+        } else {
+            var connectionUrl: String? = aUrl
+            if isCluster {
+                connectionUrl = String(self.getClusterServer(true, aPostUrl: aUrl))
             }
+            if connectionUrl != nil {
+                connectionUrl = connectionUrl!.hasSuffix("/") ? connectionUrl! : connectionUrl! + "/"
+                let path: String = "presence/\(applicationKey)/\(authenticationToken)/\(channel)"
+                connectionUrl = connectionUrl! + path
+                let request: NSMutableURLRequest = NSMutableURLRequest()
+                request.URL = NSURL(string: connectionUrl!)
+                request.HTTPMethod = "GET"
+                request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+                let pr:PresenceRequest = PresenceRequest()
+                pr.callbackDictionary = callback
+                pr.get(request)
+            } else {
+                let error: NSError = self.generateError("Unable to get URL from cluster")
+                callback(error: error, result: nil)
+            }
+        }
     }
     
     /**
@@ -862,7 +875,14 @@ public class OrtcClient: NSObject, WebSocketDelegate {
         }
     }
     
-    func subscribeChannel(channel:String, withNotifications:Bool, subscribeOnReconnect:Bool, onMessage:(ortc:OrtcClient, channel:String, message:String)->Void){
+    func subscribeChannel(channel:String,
+                          withNotifications:Bool,
+                          subscribeOnReconnect:Bool,
+                          withFilter:Bool,
+                          filter:String,
+                          onMessage:((ortc:OrtcClient, channel:String, message:String)->Void)?,
+                          onMessageWithFilter:((ortc:OrtcClient, channel:String, filtered:Bool, message:String)->Void)?){
+        
         if Bool(self.checkChannelSubscription(channel, withNotifications: withNotifications)) == true {
             
             let hashPerm: String? = self.checkChannelPermissions(channel) as? String
@@ -873,8 +893,11 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                     // Set channelSubscription properties
                     channelSubscription.isSubscribing = true
                     channelSubscription.isSubscribed = false
+                    channelSubscription.withFilter = withFilter
+                    channelSubscription.filter = filter
                     channelSubscription.subscribeOnReconnected = subscribeOnReconnect
                     channelSubscription.onMessage = onMessage
+                    channelSubscription.onMessageWithFilter = onMessageWithFilter
                     channelSubscription.withNotifications = withNotifications
                     // Add to subscribed channels dictionary
                     self.subscribedChannels![channel] = channelSubscription
@@ -887,6 +910,8 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                         self.delegateExceptionCallback(self, error: self.generateError("Failed to register Device Token. Channel subscribed without Push Notifications"))
                         aString = "\"subscribe;\(applicationKey!);\(authenticationToken!);\(channel);\(hashPerm)\""
                     }
+                } else if(withFilter){
+                    aString = "\"subscribefilter;\(applicationKey!);\(authenticationToken!);\(channel);\(hashPerm);\(filter)\""
                 } else {
                     aString = "\"subscribe;\(applicationKey!);\(authenticationToken!);\(channel);\(hashPerm)\""
                 }
@@ -1043,7 +1068,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                         }
                         let wsUrl: String = "\(wsScheme)://\(connUrl)/broadcast/\(serverId)/\(connId)/websocket"
                         let wurl:NSURL = NSURL(string: wsUrl)!
-         
+                        
                         if self.webSocket != nil {
                             self.webSocket!.delegate = nil
                             self.webSocket = nil
@@ -1142,7 +1167,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
             }
         }
         if plistProps != nil {
-
+            
             if plistProps!.objectForKey("sessionCreatedAt") != nil {
                 sessionCreatedAt = (plistProps!.objectForKey("sessionCreatedAt")!) as? NSDate
             }
@@ -1283,7 +1308,11 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                                 aString = "\"subscribe;\(applicationKey!);\(authenticationToken!);\(channel.key);\(hashPerm)\""
                                 
                             }
-                        } else {
+                            
+                        } else if (channelSubscription.withFilter == true){
+                            aString = "\"subscribefilter;\(applicationKey!);\(authenticationToken!);\(channel.key);\(hashPerm);\(channelSubscription.filter!)\""
+                        }
+                        else {
                             aString = "\"subscribe;\(applicationKey!);\(authenticationToken!);\(channel.key);\(hashPerm)\""
                             
                         }
@@ -1443,13 +1472,24 @@ public class OrtcClient: NSObject, WebSocketDelegate {
     
     func opReceive(message: String) {
         var recRegex: NSRegularExpression?
+        var recRegexFiltered: NSRegularExpression?
+        
         do{
             recRegex = try NSRegularExpression(pattern: RECEIVED_PATTERN, options:NSRegularExpressionOptions.CaseInsensitive)
         }catch{
             
         }
+        
+        do{
+            recRegexFiltered = try NSRegularExpression(pattern: RECEIVED_PATTERN_FILTERED, options:NSRegularExpressionOptions.CaseInsensitive)
+        }catch{
+            
+        }
+        
         let recMatch: NSTextCheckingResult? = recRegex?.firstMatchInString(message, options: NSMatchingOptions.ReportProgress, range: NSMakeRange(0, (message as NSString).length))
-        if recMatch != nil {
+        let recMatchFiltered: NSTextCheckingResult? = recRegexFiltered?.firstMatchInString(message, options: NSMatchingOptions.ReportProgress, range: NSMakeRange(0, (message as NSString).length))
+        
+        if recMatch != nil{
             var aChannel: String?
             var aMessage: String?
             let strRangeChn: NSRange? = recMatch!.rangeAtIndex(1)
@@ -1523,7 +1563,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                     }
                     if messagesBuffer?.objectForKey(messageId) != nil &&
                         messagesBuffer?.objectForKey(messageId)?.objectForKey("isMsgSent")?.boolValue == true {
-                            messagesBuffer?.removeObjectForKey(messageId)
+                        messagesBuffer?.removeObjectForKey(messageId)
                     } else if self.subscribedChannels!.objectForKey(aChannel!) != nil {
                         let channelSubscription:ChannelSubscription? = self.subscribedChannels!.objectForKey(aChannel!) as? ChannelSubscription
                         if !self.isEmpty(messageId) {
@@ -1537,29 +1577,142 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                     }
                 }
             }
+        } else if(recMatchFiltered != nil){
+            var aChannel: String?
+            var aMessage: String?
+            var aFiltered: NSString?
+            
+            let strRangeChn: NSRange? = recMatchFiltered!.rangeAtIndex(1)
+            let strRangeFiltered: NSRange? = recMatchFiltered!.rangeAtIndex(2)
+            let strRangeMsg: NSRange? = recMatchFiltered!.rangeAtIndex(3)
+            if strRangeChn != nil {
+                aChannel = (message as NSString).substringWithRange(strRangeChn!)
+            }
+            if strRangeFiltered != nil {
+                aFiltered = (message as NSString).substringWithRange(strRangeFiltered!)
+            }
+            if strRangeMsg != nil {
+                aMessage = (message as NSString).substringWithRange(strRangeMsg!)
+            }
+            if aChannel != nil && aMessage != nil && aFiltered != nil {
+                
+                var msgRegex: NSRegularExpression?
+                do{
+                    msgRegex = try NSRegularExpression(pattern: MULTI_PART_MESSAGE_PATTERN, options:NSRegularExpressionOptions.CaseInsensitive)
+                }catch{
+                    
+                }
+                let multiMatch: NSTextCheckingResult? = msgRegex!.firstMatchInString(aMessage!, options: NSMatchingOptions.ReportProgress, range: NSMakeRange(0, (aMessage! as NSString).length))
+                var messageId: String = ""
+                var messageCurrentPart: Int32 = 1
+                var messageTotalPart: Int32 = 1
+                var lastPart: Bool = false
+                if multiMatch != nil {
+                    let strRangeMsgId: NSRange? = multiMatch!.rangeAtIndex(1)
+                    let strRangeMsgCurPart: NSRange? = multiMatch!.rangeAtIndex(2)
+                    let strRangeMsgTotPart: NSRange? = multiMatch!.rangeAtIndex(3)
+                    let strRangeMsgRec: NSRange? = multiMatch!.rangeAtIndex(4)
+                    if strRangeMsgId != nil {
+                        messageId = (aMessage! as NSString).substringWithRange(strRangeMsgId!)
+                    }
+                    if strRangeMsgCurPart != nil {
+                        messageCurrentPart = ((aMessage! as NSString).substringWithRange(strRangeMsgCurPart!) as NSString).intValue
+                    }
+                    if strRangeMsgTotPart != nil {
+                        messageTotalPart = ((aMessage! as NSString).substringWithRange(strRangeMsgTotPart!) as NSString).intValue
+                    }
+                    if strRangeMsgRec != nil {
+                        aMessage = (aMessage! as NSString).substringWithRange(strRangeMsgRec!)
+                        //code below written by Rafa, gives a bug for a meesage containing % character
+                        //aMessage = [[aMessage substringWithRange:strRangeMsgRec] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+                    }
+                }
+                // Is a message part
+                if self.isEmpty(messageId) == false {
+                    if messagesBuffer?.objectForKey(messageId) == nil {
+                        let msgSentDict: NSMutableDictionary = NSMutableDictionary()
+                        msgSentDict["isMsgSent"] = NSNumber(bool: false)
+                        messagesBuffer?.setObject(msgSentDict, forKey: messageId)
+                    }
+                    let messageBufferId: NSMutableDictionary? = messagesBuffer?.objectForKey(messageId) as? NSMutableDictionary
+                    messageBufferId?.setObject(aMessage!, forKey: "\(messageCurrentPart)")
+                    
+                    if messageTotalPart == Int32(messageBufferId!.allKeys.count - 1) {
+                        lastPart = true
+                    }
+                } else {
+                    lastPart = true
+                    
+                }
+                if lastPart {
+                    if !self.isEmpty(messageId) {
+                        aMessage = ""
+                        let messageBufferId: NSMutableDictionary? = messagesBuffer?.objectForKey(messageId) as? NSMutableDictionary
+                        for i in 1...messageTotalPart {
+                            let messagePart: String? = messageBufferId?.objectForKey("\(i)") as? String
+                            aMessage = aMessage! + messagePart!
+                            // Delete from messages buffer
+                            messageBufferId!.removeObjectForKey("\(i)")
+                        }
+                    }
+                    if messagesBuffer?.objectForKey(messageId) != nil &&
+                        messagesBuffer?.objectForKey(messageId)?.objectForKey("isMsgSent")?.boolValue == true {
+                        messagesBuffer?.removeObjectForKey(messageId)
+                    } else if self.subscribedChannels!.objectForKey(aChannel!) != nil {
+                        let channelSubscription:ChannelSubscription? = self.subscribedChannels!.objectForKey(aChannel!) as? ChannelSubscription
+                        if !self.isEmpty(messageId) {
+                            let msgSentDict: NSMutableDictionary? = messagesBuffer?.objectForKey(messageId) as? NSMutableDictionary
+                            msgSentDict?.setObject(NSNumber(bool: true), forKey: "isMsgSent")
+                            messagesBuffer?.setObject(msgSentDict!, forKey: messageId)
+                        }
+                        aMessage = self.escapeRecvChars(aMessage! as NSString) as String
+                        aMessage = self.checkForEmoji(aMessage! as NSString) as String
+                        channelSubscription!.onMessageWithFilter!(ortc: self, channel: aChannel!, filtered: aFiltered!.boolValue, message: aMessage!)
+                    }
+                }
+            }
         }
+        
     }
     
     func checkForEmoji(var str:NSString)->String{
-        for var i in 0..<str.length {
-            if i >= str.length {
-                return str as String
-            }
-            let ascii = str.characterAtIndex(i)
+        var i = 0
+        var len = str.length
+        
+        while i < len {
+            let ascii:unichar = str.characterAtIndex(i)
             if(ascii == "\\".characterAtIndex(0)){
-                i = i+1
-                let next = str.characterAtIndex(i)
+                
+                let next = str.characterAtIndex(i + 1)
+                
                 if next == "u".characterAtIndex(0) {
-                    var emoji: String? = str.substringWithRange(NSMakeRange(i-1, 12))
-                    let pos: NSData? = emoji?.dataUsingEncoding(NSUTF8StringEncoding)
-                    if pos != nil{
-                        emoji = NSString(data: pos!, encoding: NSNonLossyASCIIStringEncoding) as? String
+                    var size = ((i - 1) + 12)
+                    if (size < len && str.characterAtIndex(i + 6) == "u".characterAtIndex(0)){
+                        var emoji: NSString? = str.substringWithRange(NSMakeRange((i), 12))
+                        let pos: NSData? = emoji?.dataUsingEncoding(NSUTF8StringEncoding)
+                        
+                        if pos != nil{
+                            emoji = NSString(data: pos!, encoding: NSNonLossyASCIIStringEncoding) as? String
+                        }
+                        if emoji != nil {
+                            str = str.stringByReplacingCharactersInRange(NSMakeRange((i), 12), withString: emoji! as String)
+                            
+                        }
+                        
+                    }else{
+                        var emoji: NSString? = str.substringWithRange(NSMakeRange((i), 6))
+                        let pos: NSData? = emoji?.dataUsingEncoding(NSUTF8StringEncoding)
+                        if pos != nil{
+                            emoji = NSString(data: pos!, encoding: NSNonLossyASCIIStringEncoding) as? String
+                        }
+                        if emoji != nil {
+                            str = str.stringByReplacingCharactersInRange(NSMakeRange((i), 6), withString: emoji! as String)
+                        }
                     }
-                    if emoji != nil {
-                        str = str.stringByReplacingCharactersInRange(NSMakeRange(i-1, 12), withString: emoji!)
-                    }                    
                 }
             }
+            len = str.length
+            i = i + 1
         }
         return str as String
     }
@@ -1570,10 +1723,13 @@ public class OrtcClient: NSObject, WebSocketDelegate {
         return str as String
     }
     
-    func simulateJsonParse(str:NSString)->String{
+    func simulateJsonParse(str:NSString)->NSString{
         let ms: NSMutableString = NSMutableString()
-        for var i in 0..<str.length {
-            var ascii = str.characterAtIndex(i)
+        let len = str.length
+        
+        var i = 0
+        while i < len {
+            var ascii:unichar = str.characterAtIndex(i)
             if ascii > 128 {
                 //unicode
                 ms.appendFormat("%@",NSString(characters: &ascii, length: 1))
@@ -1582,30 +1738,31 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                 if ascii == "\\".characterAtIndex(0) {
                     i = i+1
                     let next = str.characterAtIndex(i)
+                    
                     if next == "\\".characterAtIndex(0) {
-                        ms.appendFormat("%c", "\\".characterAtIndex(0))
+                        ms.appendString("\\")
                     } else if next == "n".characterAtIndex(0) {
-                        ms.appendFormat("%c", "\n".characterAtIndex(0))
+                        ms.appendString("\n")
                     } else if next == "\"".characterAtIndex(0) {
-                        ms.appendFormat("%c", "\"".characterAtIndex(0))
+                        ms.appendString("\"")
                     } else if next == "b".characterAtIndex(0) {
-                        ms.appendFormat("%c", "b".characterAtIndex(0))
+                        ms.appendString("b")
                     } else if next == "f".characterAtIndex(0) {
-                        ms.appendFormat("%c", "f".characterAtIndex(0))
+                        ms.appendString("f")
                     } else if next == "r".characterAtIndex(0) {
-                        ms.appendFormat("%c", "\r".characterAtIndex(0))
+                        ms.appendString("\r")
                     } else if next == "t".characterAtIndex(0) {
-                        ms.appendFormat("%c", "\t".characterAtIndex(0))
+                        ms.appendString("\t")
                     } else if next == "u".characterAtIndex(0) {
-                        ms.appendFormat("%c", "\\u".characterAtIndex(0))
+                        ms.appendString("\\u")
                     }
                 } else {
                     ms.appendFormat("%c",ascii)
                 }
-                
             }
+            i = i + 1
         }
-        return ms as String
+        return ms as NSString
     }
     
     func generateId(size: Int) -> String {
@@ -1715,7 +1872,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
     
     func delegateReconnectingCallback(ortc: OrtcClient) {
         self.ortcDelegate?.onReconnecting(ortc)
-     }
+    }
     
     func delegateReconnectedCallback(ortc: OrtcClient) {
         self.ortcDelegate?.onReconnected(ortc)
@@ -1733,7 +1890,10 @@ class ChannelSubscription: NSObject {
     var isSubscribed: Bool?
     var subscribeOnReconnected: Bool?
     var withNotifications: Bool?
+    var withFilter: Bool?
+    var filter:String?
     var onMessage: ((ortc:OrtcClient, channel:String, message:String)->Void?)?
+    var onMessageWithFilter: ((ortc:OrtcClient, channel:String, filtered:Bool, message:String)->Void?)?
     
     override init() {
         super.init()
