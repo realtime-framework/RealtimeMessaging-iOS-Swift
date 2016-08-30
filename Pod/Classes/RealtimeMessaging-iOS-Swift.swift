@@ -425,7 +425,8 @@ public class OrtcClient: NSObject, WebSocketDelegate {
      *
      * - parameter channel: The channel name.
      * - parameter subscribeOnReconnected: Indicates whether the client should subscribe to the channel when reconnected (if it was previously subscribed when connected).
-     * - parameter onMessage: The callback called when a message arrives at the channel.
+     * - parameter filter: The filter to apply to the channel messages.
+     * - parameter onMessageWithFilter: The callback called when a message arrives at the channel.
      */
     public func subscribeWithFilter(channel:String, subscribeOnReconnected:Bool, filter:String ,onMessageWithFilter:(ortc:OrtcClient, channel:String, filtered:Bool, message:String)->Void){
         self.subscribeChannel(channel, withNotifications: WITHOUT_NOTIFICATIONS, subscribeOnReconnect: subscribeOnReconnected, withFilter: true, filter: filter, onMessage: nil, onMessageWithFilter: onMessageWithFilter)
