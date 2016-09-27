@@ -1786,7 +1786,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
         }
         
         if connectionMetadata != nil {
-            connectionMetadata = connectionMetadata!.replacingOccurrences(of: "\"", with: "\\\"") as NSString?
+            connectionMetadata = connectionMetadata!.stringByReplacingOccurrencesOfString("\"", withString: "\\\"")
         }
         
         // Send validate
