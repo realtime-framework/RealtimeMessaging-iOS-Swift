@@ -1784,6 +1784,11 @@ public class OrtcClient: NSObject, WebSocketDelegate {
         if heartbeatActive == true{
             hbDetails = ";\(heartbeatTime!);\(heartbeatFails!);"
         }
+        
+        if connectionMetadata != nil {
+            connectionMetadata = connectionMetadata!.replacingOccurrences(of: "\"", with: "\\\"") as NSString?
+        }
+        
         // Send validate
         let aString: String = "\"validate;\(applicationKey!);\(authenticationToken!);\(announcementSubChannel != nil ? announcementSubChannel! : "");\(sessionId != nil ? sessionId! : "");\(connectionMetadata != nil ? connectionMetadata! : "")\(hbDetails)\""
         self.webSocket!.writeString(aString)
