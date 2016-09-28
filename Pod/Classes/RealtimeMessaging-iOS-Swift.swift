@@ -1785,12 +1785,13 @@ public class OrtcClient: NSObject, WebSocketDelegate {
             hbDetails = ";\(heartbeatTime!);\(heartbeatFails!);"
         }
         
+        var tempMetaData:NSString?
         if connectionMetadata != nil {
-            connectionMetadata = connectionMetadata!.stringByReplacingOccurrencesOfString("\"", withString: "\\\"")
+            tempMetaData = connectionMetadata!.stringByReplacingOccurrencesOfString("\\", withString: "\\\\").stringByReplacingOccurrencesOfString("\"", withString: "\\\"") as NSString?
         }
         
         // Send validate
-        let aString: String = "\"validate;\(applicationKey!);\(authenticationToken!);\(announcementSubChannel != nil ? announcementSubChannel! : "");\(sessionId != nil ? sessionId! : "");\(connectionMetadata != nil ? connectionMetadata! : "")\(hbDetails)\""
+        let aString: String = "\"validate;\(applicationKey!);\(authenticationToken!);\(announcementSubChannel != nil ? announcementSubChannel! : "");\(sessionId != nil ? sessionId! : "");\(tempMetaData != nil ? "\(tempMetaData!)" : "")\(hbDetails)\""
         self.webSocket!.writeString(aString)
     }
     

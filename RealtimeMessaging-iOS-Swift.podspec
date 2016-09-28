@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = "RealtimeMessaging-iOS-Swift"
-  s.version          = "2.1.4"
+  s.version          = "2.1.6"
   s.summary          = "Swift Realtime Cloud Messaging (ORTC) SDK for iOS"
 
   s.description      = <<-DESC
