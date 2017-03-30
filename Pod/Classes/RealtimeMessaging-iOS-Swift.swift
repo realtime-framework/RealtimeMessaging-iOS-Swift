@@ -279,7 +279,7 @@ public class OrtcClient: NSObject, WebSocketDelegate {
     public func connect(applicationKey:NSString?, authenticationToken:NSString?){
         if isConnected == true {
             self.delegateExceptionCallback(self, error: self.generateError("Already connected"))
-        } else if self.url != nil && self.clusterUrl != nil {
+        } else if self.url == nil && self.clusterUrl == nil {
             self.delegateExceptionCallback(self, error: self.generateError("URL and Cluster URL are null or empty"))
         } else if applicationKey == nil {
             self.delegateExceptionCallback(self, error: self.generateError("Application Key is null or empty"))
@@ -1756,7 +1756,10 @@ public class OrtcClient: NSObject, WebSocketDelegate {
                         ms.appendString("\t")
                     } else if next == "u".characterAtIndex(0) {
                         ms.appendString("\\u")
+                    } else if next == "/".characterAtIndex(0){
+                        ms.appendString("\\/");
                     }
+
                 } else {
                     ms.appendFormat("%c",ascii)
                 }
