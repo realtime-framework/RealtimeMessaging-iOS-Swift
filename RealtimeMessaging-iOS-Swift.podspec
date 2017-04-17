@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = "RealtimeMessaging-iOS-Swift"
-  s.version          = "2.1.10"
+  s.version          = "2.1.8"
   s.summary          = "Swift Realtime Cloud Messaging (ORTC) SDK for iOS"
 
   s.description      = <<-DESC
@@ -24,8 +24,6 @@ Pod::Spec.new do |s|
   s.social_media_url = 'https://twitter.com/RTWworld'
 
   s.platform     = :ios, '8.0'
-  s.platform     = :tvos, '9.0'
-
   s.requires_arc = true
   s.source_files = 'Pod/Classes/**/*'
   s.dependency 'Starscream', '1.1.4'
